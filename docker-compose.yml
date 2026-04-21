@@ -9,7 +9,6 @@ services:
       - ENV=production
     restart: unless-stopped
 
-  # Для локальной разработки можно добавить клиент
   frontend:
     image: nginx:alpine
     ports:

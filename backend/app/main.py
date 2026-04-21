@@ -18,3 +18,4 @@ if __name__ == "__main__":
         reload=os.getenv("ENV") == "development",
         log_level=os.getenv("LOG_LEVEL", "info")
     )
+

@@ -126,3 +126,9 @@ async def websocket_endpoint(websocket: WebSocket, room_id: str, user_id: str):
         # Если комната пуста - удаляем её
         if room.is_empty():
             room_manager.remove_room(room_id)
+
+import os, uvicorn
+
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
