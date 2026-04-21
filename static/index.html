@@ -859,7 +859,12 @@
 
             // ws = new WebSocket(`ws://localhost:8000/ws/${myUsername}`);
             const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const ws = new WebSocket(`${protocol}//${window.location.host}/ws/${myUsername}`);
+            try {
+                const ws = new WebSocket(`${protocol}//${window.location.host}/ws/${myUsername}`);
+                console.log("WebSocket создан:", ws);
+            } catch(e) {
+                console.error("Ошибка создания WebSocket:", e);
+            }
 
             ws.onopen = () => {
                 loginOverlay.classList.add('hidden');
