@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY server/ .
 
 # Копируем статические файлы (клиент)
-COPY client/ ./static/
+COPY static/ ./static/
 
 # Указываем порт
 EXPOSE 8000
