@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>P2P Video Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* Контейнер приложения */
+        .app-container {
+            width: 100%;
+            max-width: 1400px;
+            height: 90vh;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Шапка */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+
+        .user-info {
+            background: rgba(255,255,255,0.2);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* Основное содержимое */
+        .main-content {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Боковая панель с пользователями */
+        .sidebar {
+            width: 280px;
+            background: #f8f9fa;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #fff;
+        }
+
+        .sidebar-header h3 {
+            color: #333;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .online-count {
+            color: #4CAF50;
+            font-size: 0.8rem;
+            margin-top: 5px;
+        }
+
+        .users-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .user-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            margin-bottom: 8px;
+            background: white;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e0e0e0;
+        }
+
+        .user-item:hover {
+            transform: translateX(5px);
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102,126,234,0.2);
+        }
+
+        .user-name {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .call-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .call-btn, .video-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .call-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .call-btn:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+
+        .video-btn {
+            background: #2196F3;
+            color: white;
+        }
+
+        .video-btn:hover {
+            background: #0b7dda;
+            transform: scale(1.05);
+        }
+
+        /* Основная область чата/видео */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #fff;
+        }
+
+        /* Видео контейнер */
+        .video-container {
+            display: flex;
+            gap: 20px;
+            padding: 20px;
+            background: #1a1a2e;
+            min-height: 300px;
+        }
+
+        .video-box {
+            flex: 1;
+            position: relative;
+            background: #0f0f1a;
+            border-radius: 16px;
+            overflow: hidden;
+            aspect-ratio: 16/9;
+        }
+
+        .video-box video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-label {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+
+        .video-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 15px;
+            background: #1a1a2e;
+        }
+
+        .video-control-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            transition: all 0.2s;
+        }
+
+        .video-control-btn.mic {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .video-control-btn.mic.muted {
+            background: #f44336;
+        }
+
+        .video-control-btn.camera {
+            background: #2196F3;
+            color: white;
+        }
+
+        .video-control-btn.camera.off {
+            background: #f44336;
+        }
+
+        .video-control-btn.hangup {
+            background: #f44336;
+            color: white;
+        }
+
+        /* Чат сообщений */
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            background: #f5f5f5;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 18px;
+            font-size: 14px;
+            word-wrap: break-word;
+        }
+
+        .message.my {
+            background: #667eea;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.other {
+            background: white;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .message-system {
+            text-align: center;
+            color: #888;
+            font-size: 12px;
+            padding: 5px;
+        }
+
+        /* Поле ввода */
+        .input-area {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-area input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-area input:focus {
+            border-color: #667eea;
+        }
+
+        .input-area button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+
+        .input-area button:hover {
+            transform: scale(1.02);
+        }
+
+        /* Модальное окно входа */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 24px;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .login-card h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .login-card input {
+            width: 100%;
+            padding: 14px;
+            margin: 10px 0;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .login-card input:focus {
+            border-color: #667eea;
+        }
+
+        .login-card button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .status-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            z-index: 100;
+        }
+
+        /* Скрытые элементы */
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-card">
+            <h2>🎥 P2P Video Chat</h2>
+            <input type="text" id="usernameInput" placeholder="Введите ваше имя" autocomplete="off">
+            <button onclick="connect()">Подключиться</button>
+        </div>
+    </div>
+
+    <div class="app-container hidden" id="appContainer">
+        <div class="header">
+            <h1>🎥 P2P Video Chat</h1>
+            <div class="user-info" id="userInfo"></div>
+        </div>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <h3>👥 Пользователи онлайн</h3>
+                    <div class="online-count" id="onlineCount">0 онлайн</div>
+                </div>
+                <div class="users-list" id="usersList">
+                    <div style="text-align: center; color: #999;">Загрузка...</div>
+                </div>
+            </div>
+
+            <div class="chat-area">
+                <div class="video-container hidden" id="videoContainer">
+                    <div class="video-box">
+                        <video id="localVideo" autoplay muted playsinline></video>
+                        <div class="video-label">Вы</div>
+                    </div>
+                    <div class="video-box">
+                        <video id="remoteVideo" autoplay playsinline></video>
+                        <div class="video-label" id="remoteLabel">Собеседник</div>
+                    </div>
+                </div>
+
+                <div class="video-controls hidden" id="videoControls">
+                    <button class="video-control-btn mic" id="micBtn" onclick="toggleMic()">🎤</button>
+                    <button class="video-control-btn camera" id="cameraBtn" onclick="toggleCamera()">📹</button>
+                    <button class="video-control-btn hangup" onclick="hangup()">📞</button>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message-system">✨ Выберите пользователя, чтобы начать общение</div>
+                </div>
+
+                <div class="input-area">
+                    <input type="text" id="messageInput" placeholder="Сообщение..." disabled>
+                    <button id="sendBtn" disabled>Отправить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-badge" id="statusBadge">🟡 Не подключён</div>
+
+    <script>
+        // ========== ПЕРЕМЕННЫЕ ==========
+        let ws = null;
+        let pc = null;
+        let dataChannel = null;
+        let localStream = null;
+        let remoteStream = null;
+        let myUsername = null;
+        let currentPeer = null;
+        let callType = null; // 'chat' или 'video'
+
+        // Состояния
+        let isMicEnabled = true;
+        let isCameraEnabled = true;
+
+        // DOM элементы
+        const loginOverlay = document.getElementById('loginOverlay');
+        const appContainer = document.getElementById('appContainer');
+        const userInfo = document.getElementById('userInfo');
+        const usersList = document.getElementById('usersList');
+        const onlineCount = document.getElementById('onlineCount');
+        const chatMessages = document.getElementById('chatMessages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const statusBadge = document.getElementById('statusBadge');
+        const videoContainer = document.getElementById('videoContainer');
+        const videoControls = document.getElementById('videoControls');
+        const localVideo = document.getElementById('localVideo');
+        const remoteVideo = document.getElementById('remoteVideo');
+        const remoteLabel = document.getElementById('remoteLabel');
+
+        // ========== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ==========
+        function addMessage(text, isMy = false, isSystem = false) {
+            const msgDiv = document.createElement('div');
+            if (isSystem) {
+                msgDiv.className = 'message-system';
+                msgDiv.textContent = text;
+            } else {
+                msgDiv.className = `message ${isMy ? 'my' : 'other'}`;
+                msgDiv.textContent = text;
+            }
+            chatMessages.appendChild(msgDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function setStatus(text, isError = false) {
+            statusBadge.textContent = text;
+            statusBadge.style.background = isError ? 'rgba(244,67,54,0.9)' : 'rgba(0,0,0,0.7)';
+            console.log(text);
+        }
+
+        function updateUsersList(users) {
+            const myUser = users.find(u => u === myUsername);
+            const otherUsers = users.filter(u => u !== myUsername);
+
+            onlineCount.textContent = `${users.length} онлайн`;
+
+            if (otherUsers.length === 0) {
+                usersList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">👻 Нет других пользователей</div>';
+                return;
+            }
+
+            usersList.innerHTML = otherUsers.map(user => `
+                <div class="user-item">
+                    <div class="user-name">
+                        <div class="user-avatar">${user.charAt(0).toUpperCase()}</div>
+                        <span>${user}</span>
+                    </div>
+                    <div class="call-buttons">
+                        <button class="call-btn" onclick="startCall('${user}', 'chat')" title="Текстовый чат">💬</button>
+                        <button class="video-btn" onclick="startCall('${user}', 'video')" title="Видеозвонок">📹</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ========== МЕДИА ФУНКЦИИ ==========
+        async function getLocalStream() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: { ideal: 1280 }, height: { ideal: 720 } },
+                    audio: true
+                });
+                localVideo.srcObject = localStream;
+                setStatus('✅ Камера и микрофон готовы');
+                return true;
+            } catch (err) {
+                console.error('Ошибка доступа к медиа:', err);
+                if (err.name === 'NotAllowedError') {
+                    addMessage('❌ Нет доступа к камере/микрофону', false, true);
+                } else if (err.name === 'NotFoundError') {
+                    addMessage('❌ Камера/микрофон не найдены', false, true);
+                }
+                return false;
+            }
+        }
+
+        function toggleMic() {
+            if (localStream) {
+                const audioTrack = localStream.getAudioTracks()[0];
+                if (audioTrack) {
+                    isMicEnabled = !isMicEnabled;
+                    audioTrack.enabled = isMicEnabled;
+                    const micBtn = document.getElementById('micBtn');
+                    micBtn.textContent = isMicEnabled ? '🎤' : '🔇';
+                    micBtn.classList.toggle('muted', !isMicEnabled);
+                }
+            }
+        }
+
+        function toggleCamera() {
+            if (localStream) {
+                const videoTrack = localStream.getVideoTracks()[0];
+                if (videoTrack) {
+                    isCameraEnabled = !isCameraEnabled;
+                    videoTrack.enabled = isCameraEnabled;
+                    const cameraBtn = document.getElementById('cameraBtn');
+                    cameraBtn.textContent = isCameraEnabled ? '📹' : '🚫';
+                    cameraBtn.classList.toggle('off', !isCameraEnabled);
+                }
+            }
+        }
+
+        // ========== WEBRTC ФУНКЦИИ ==========
+        async function startCall(peerName, type) {
+            if (pc) {
+                hangup();
+            }
+
+            currentPeer = peerName;
+            callType = type;
+            setStatus(`📞 ${type === 'video' ? 'Звонок' : 'Чат'} с ${peerName}...`);
+
+            // Конфигурация ICE
+            const config = {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            };
+
+            pc = new RTCPeerConnection(config);
+
+            if (type === 'video') {
+                // Видеозвонок: получаем камеру и добавляем треки
+                if (!localStream) {
+                    const ok = await getLocalStream();
+                    if (!ok) {
+                        hangup();
+                        return;
+                    }
+                }
+
+                localStream.getTracks().forEach(track => {
+                    pc.addTrack(track, localStream);
+                });
+
+                pc.ontrack = (event) => {
+                    if (!remoteStream) {
+                        remoteStream = new MediaStream();
+                        remoteVideo.srcObject = remoteStream;
+                    }
+                    remoteStream.addTrack(event.track);
+                };
+
+                // Показываем видео интерфейс
+                videoContainer.classList.remove('hidden');
+                videoControls.classList.remove('hidden');
+            } else {
+                // Текстовый чат: создаём DataChannel
+                dataChannel = pc.createDataChannel('chat');
+
+                dataChannel.onopen = () => {
+                    setStatus(`✅ P2P чат с ${currentPeer} установлен`);
+                    messageInput.disabled = false;
+                    sendBtn.disabled = false;
+                    addMessage(`Чат с ${currentPeer} установлен`, false, true);
+                };
+
+                dataChannel.onclose = () => {
+                    setStatus(`🔌 Чат с ${currentPeer} закрыт`);
+                    messageInput.disabled = true;
+                    sendBtn.disabled = true;
+                };
+
+                dataChannel.onmessage = (event) => {
+                    addMessage(event.data, false);
+                };
+
+                // Скрываем видео интерфейс
+                videoContainer.classList.add('hidden');
+                videoControls.classList.add('hidden');
+            }
+
+            // ICE кандидаты
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    ws.send(JSON.stringify({
+                        type: 'ice',
+                        target: currentPeer,
+                        data: event.candidate
+                    }));
+                }
+            };
+
+            pc.onconnectionstatechange = () => {
+                if (pc.connectionState === 'connected') {
+                    setStatus(`✅ P2P соединение установлено`);
+                } else if (pc.connectionState === 'failed') {
+                    setStatus(`❌ Соединение не удалось`, true);
+                    addMessage(`Не удалось установить соединение с ${currentPeer}`, false, true);
+                }
+            };
+
+            // Создаём offer
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+
+            ws.send(JSON.stringify({
+                type: 'offer',
+                target: currentPeer,
+                data: { offer: offer, callType: type }
+            }));
+        }
+
+        async function handleOffer(from, data) {
+            currentPeer = from;
+            callType = data.callType;
+            setStatus(`📞 Входящий ${callType === 'video' ? 'звонок' : 'чат'} от ${from}...`);
+
+            if (pc) {
+                hangup();
+            }
+
+            const config = {
+                iceServers: [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' }
+                ]
+            };
+
+            pc = new RTCPeerConnection(config);
+
+            if (callType === 'video') {
+                if (!localStream) {
+                    const ok = await getLocalStream();
+                    if (!ok) {
+                        ws.send(JSON.stringify({
+                            type: 'reject',
+                            target: from,
+                            data: { reason: 'no_media' }
+                        }));
+                        hangup();
+                        return;
+                    }
+                }
+
+                localStream.getTracks().forEach(track => {
+                    pc.addTrack(track, localStream);
+                });
+
+                pc.ontrack = (event) => {
+                    if (!remoteStream) {
+                        remoteStream = new MediaStream();
+                        remoteVideo.srcObject = remoteStream;
+                    }
+                    remoteStream.addTrack(event.track);
+                };
+
+                videoContainer.classList.remove('hidden');
+                videoControls.classList.remove('hidden');
+                remoteLabel.textContent = from;
+            } else {
+                pc.ondatachannel = (event) => {
+                    dataChannel = event.channel;
+
+                    dataChannel.onopen = () => {
+                        setStatus(`✅ P2P чат с ${currentPeer} установлен`);
+                        messageInput.disabled = false;
+                        sendBtn.disabled = false;
+                        addMessage(`Чат с ${currentPeer} установлен`, false, true);
+                    };
+
+                    dataChannel.onclose = () => {
+                        setStatus(`🔌 Чат с ${currentPeer} закрыт`);
+                        messageInput.disabled = true;
+                        sendBtn.disabled = true;
+                    };
+
+                    dataChannel.onmessage = (event) => {
+                        addMessage(event.data, false);
+                    };
+                };
+
+                videoContainer.classList.add('hidden');
+                videoControls.classList.add('hidden');
+            }
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    ws.send(JSON.stringify({
+                        type: 'ice',
+                        target: currentPeer,
+                        data: event.candidate
+                    }));
+                }
+            };
+
+            await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+
+            ws.send(JSON.stringify({
+                type: 'answer',
+                target: from,
+                data: answer
+            }));
+        }
+
+        async function handleAnswer(from, answer) {
+            if (pc && pc.signalingState === 'have-local-offer') {
+                await pc.setRemoteDescription(new RTCSessionDescription(answer));
+            }
+        }
+
+        async function handleIce(from, candidate) {
+            if (pc && pc.remoteDescription) {
+                try {
+                    await pc.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch(e) {
+                    console.error('ICE ошибка:', e);
+                }
+            }
+        }
+
+        function handleReject(from, data) {
+            addMessage(`${from} отклонил ${callType === 'video' ? 'звонок' : 'чат'}`, false, true);
+            hangup();
+        }
+
+        function hangup() {
+            if (localStream) {
+                // Не закрываем поток, чтобы можно было использовать снова
+                if (localVideo.srcObject) {
+                    localVideo.srcObject = null;
+                    localVideo.srcObject = localStream;
+                }
+            }
+
+            if (remoteStream) {
+                remoteStream.getTracks().forEach(track => track.stop());
+                remoteStream = null;
+                remoteVideo.srcObject = null;
+            }
+
+            if (dataChannel) {
+                dataChannel.close();
+                dataChannel = null;
+            }
+
+            if (pc) {
+                pc.close();
+                pc = null;
+            }
+
+            currentPeer = null;
+            callType = null;
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+            videoContainer.classList.add('hidden');
+            videoControls.classList.add('hidden');
+            setStatus('🟢 Готов к общению');
+        }
+
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (text && dataChannel && dataChannel.readyState === 'open') {
+                dataChannel.send(text);
+                addMessage(text, true);
+                messageInput.value = '';
+            } else if (!dataChannel || dataChannel.readyState !== 'open') {
+                addMessage('Соединение не установлено', false, true);
+            }
+        }
+
+        // ========== ПОДКЛЮЧЕНИЕ ==========
+        function connect() {
+            myUsername = document.getElementById('usernameInput').value.trim();
+            if (!myUsername) {
+                alert('Введите имя');
+                return;
+            }
+
+            // ws = new WebSocket(`ws://localhost:8000/ws/${myUsername}`);
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const ws = new WebSocket(`${protocol}//${window.location.host}/ws/${myUsername}`);
+
+            ws.onopen = () => {
+                loginOverlay.classList.add('hidden');
+                appContainer.classList.remove('hidden');
+                userInfo.textContent = `👤 ${myUsername}`;
+                setStatus('🟢 Подключён к серверу');
+                addMessage(`Добро пожаловать, ${myUsername}!`, false, true);
+            };
+
+            ws.onmessage = async (event) => {
+                const msg = JSON.parse(event.data);
+                console.log('Получено:', msg);
+
+                switch (msg.type) {
+                    case 'users':
+                        updateUsersList(msg.users);
+                        break;
+                    case 'offer':
+                        await handleOffer(msg.from, msg.data);
+                        break;
+                    case 'answer':
+                        await handleAnswer(msg.from, msg.data);
+                        break;
+                    case 'ice':
+                        await handleIce(msg.from, msg.data);
+                        break;
+                    case 'reject':
+                        handleReject(msg.from, msg.data);
+                        break;
+                    case 'error':
+                        addMessage(`❌ ${msg.message}`, false, true);
+                        setStatus(`Ошибка: ${msg.message}`, true);
+                        break;
+                }
+            };
+
+            ws.onclose = () => {
+                setStatus('🔴 Соединение потеряно', true);
+                loginOverlay.classList.remove('hidden');
+                appContainer.classList.add('hidden');
+                hangup();
+            };
+
+            ws.onerror = () => {
+                setStatus('❌ Ошибка соединения', true);
+            };
+        }
+
+        // Настройка кнопок
+        sendBtn.onclick = sendMessage;
+        messageInput.onkeypress = (e) => {
+            if (e.key === 'Enter') sendMessage();
+        };
+    </script>
+</body>
+</html>
