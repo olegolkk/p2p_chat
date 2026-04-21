@@ -1,6 +1,7 @@
 from fastapi import FastAPI, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+from urllib.parse import unquote
 import uvicorn
 import json
 import os
@@ -14,17 +15,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Раздаём статические файлы (клиент)
-if os.path.exists("static"):
-    app.mount("/", StaticFiles(directory="static", html=True), name="static")
-
 clients = {}
 
 
+# ===== ВАЖНО: WebSocket маршрут ДО статики =====
 @app.websocket("/ws/{username}")
 async def websocket_handler(websocket: WebSocket, username: str):
+    username = unquote(username)
     await websocket.accept()
     clients[username] = websocket
+    print(f"✅ {username} connected")
+
     await broadcast_users()
 
     try:
@@ -38,8 +39,8 @@ async def websocket_handler(websocket: WebSocket, username: str):
                     "from": username,
                     "data": message.get("data")
                 }))
-    except:
-        pass
+    except Exception as e:
+        print(f"❌ {username} disconnected: {e}")
     finally:
         if username in clients:
             del clients[username]
@@ -55,6 +56,22 @@ async def broadcast_users():
         except:
             pass
 
+
+# ===== Корневой маршрут =====
+@app.get("/")
+async def root():
+    # Пробуем отдать index.html из static, если есть
+    if os.path.exists("static/index.html"):
+        with open("static/index.html", "r") as f:
+            return HTMLResponse(f.read())
+    return HTMLResponse("<h1>P2P Chat Server Running</h1><p>WebSocket: /ws/username</p>")
+
+
+# ===== Статика - ТОЛЬКО ПОСЛЕ всех маршрутов! =====
+if os.path.exists("static"):
+    from fastapi.staticfiles import StaticFiles
+
+    app.mount("/static", StaticFiles(directory="static"), name="static")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
